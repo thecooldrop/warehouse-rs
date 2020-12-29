@@ -1,4 +1,4 @@
 create table product (
     id serial primary key,
-    description varchar
+    description varchar not null
 );
