@@ -1,5 +1,5 @@
 create table product_category_rollup(
-    id serial,
+    id serial primary key,
     upper_category_id integer not null,
     lower_category_id integer not null,
     foreign key (upper_category_id) references product_category(id),
