@@ -9,3 +9,14 @@ edition = "2018"
 [dependencies]
 diesel = { version = "1.4.4", features = ["postgres"] }
 dotenv = "0.15.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rocket = "0.4.6"
+testcontainers = "0.11.0"
+diesel_migrations = "1.4.0"
+lazy_static = "1.4.0"
+
+[dependencies.rocket_contrib]
+version = "0.4.6"
+default-features = false
+features = ["diesel_postgres_pool", "json"]
