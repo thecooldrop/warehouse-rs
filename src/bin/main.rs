@@ -19,6 +19,7 @@ use diesel::{insert_into, ExpressionMethods, RunQueryDsl, QueryResult, QueryDsl}
 use diesel::result::Error;
 use diesel::result::Error::RollbackTransaction;
 use std::borrow::Borrow;
+use rocket::http::Status;
 
 
 #[derive(Serialize, Deserialize)]
@@ -26,8 +27,17 @@ pub struct ProductCategoryRequestBody{
     pub name : String
 }
 
+#[derive(Responder)]
+pub enum ProductCategoryPostResponder {
+    #[response(status=201, content_type="json")]
+    Created(Json<ProductCategory>),
+    #[response(status=200, content_type="json")]
+    Existed(Json<ProductCategory>)
+}
+
+
 #[post("/productcategory", format="json", data="<new_product_category>")]
-fn create_product_category(db_conn: DbConn, new_product_category: Json<ProductCategoryRequestBody>) -> Json<ProductCategory>{
+fn create_product_category(db_conn: DbConn, new_product_category: Json<ProductCategoryRequestBody>) -> ProductCategoryPostResponder {
     use warehouse_rs::schema::product_category::dsl::*;
     use warehouse_rs::schema::product_category::all_columns;
 
@@ -39,7 +49,7 @@ fn create_product_category(db_conn: DbConn, new_product_category: Json<ProductCa
         .unwrap();
 
     if !product_categories_with_name.is_empty() {
-        return Json(product_categories_with_name.into_iter().nth(0).unwrap());
+        return ProductCategoryPostResponder::Existed(Json(product_categories_with_name.into_iter().nth(0).unwrap()));
     }
 
     let inserted_id = insert_into(product_category)
@@ -52,7 +62,7 @@ fn create_product_category(db_conn: DbConn, new_product_category: Json<ProductCa
         id: inserted_id,
         name: product_category_name
     };
-    Json(inserted_product_category)
+    ProductCategoryPostResponder::Created(Json(inserted_product_category))
 }
 
 #[get("/productcategory")]
@@ -62,15 +72,22 @@ fn get_all_product_categories(db_conn: DbConn) -> Json<Vec<ProductCategory>> {
     Json(product_categories)
 }
 
+
+#[derive(Responder)]
+pub enum ProductCategoryGetResponder {
+    #[response(status=200, content_type="json")]
+    Found(Json<ProductCategory>),
+    #[response(status=404, content_type="json")]
+    NotFound(())
+}
+
 #[get("/productcategory/<product_category_id>")]
-fn get_product_category(db_conn: DbConn, product_category_id: u32) -> Json<ProductCategory> {
+fn get_product_category(db_conn: DbConn, product_category_id: u32) -> ProductCategoryGetResponder {
     use warehouse_rs::schema::product_category::dsl::*;
     if let Ok(category_by_id) = product_category.find(product_category_id as i32).first(&db_conn.0) {
-        return Json(category_by_id);
+        return ProductCategoryGetResponder::Found(Json(category_by_id));
     }
-    Json(ProductCategory {
-        id:999, name: String::from("lolz")
-    })
+    ProductCategoryGetResponder::NotFound(())
 }
 
 fn main() {
@@ -93,7 +110,7 @@ mod tests {
     use crate::{static_rocket_route_info_for_create_product_category, ProductCategoryRequestBody};
     use crate::static_rocket_route_info_for_get_all_product_categories;
     use crate::static_rocket_route_info_for_get_product_category;
-    use rocket::http::Header;
+    use rocket::http::{Header, Status};
     use warehouse_rs::entities::ProductCategory;
     use diesel::prelude::*;
     use rocket::{Config, Rocket};
@@ -170,13 +187,16 @@ mod tests {
         req.set_body("{\"name\":\"product\"}".to_string());
         req.add_header(Header::new("Content-Type", "application/json"));
 
-        let response_body = req.dispatch().body_string().unwrap();
+        let mut response = req.dispatch();
+        let response_body = response.body_string().unwrap();
+        let response_status = response.status();
         let response_product_category : ProductCategory = serde_json::from_str(&response_body).unwrap();
 
         use warehouse_rs::schema::product_category::dsl::*;
         let categories_in_db : Vec<ProductCategory> = product_category.filter(name.eq("product")).load::<ProductCategory>(&connection).unwrap();
         assert_eq!(categories_in_db.len(), 1);
         assert_eq!(categories_in_db.get(0).unwrap().name, "product".to_string());
+        assert_eq!(response_status, Status::Created);
         Ok(())
     }
 
@@ -198,10 +218,13 @@ mod tests {
             .get_result(&connection)
             .unwrap();
 
-        let response_body = req.dispatch().body_string().unwrap();
+        let mut response = req.dispatch();
+        let response_body = response.body_string().unwrap();
+        let response_status = response.status();
         let response_product_category = serde_json::from_str::<ProductCategory>(&response_body).unwrap();
         assert_eq!(inserted_id, response_product_category.id);
         assert_eq!("product".to_string(), response_product_category.name);
+        assert_eq!(response_status, Status::Ok);
     }
 
     #[test]
@@ -217,7 +240,10 @@ mod tests {
             .values(&vec![name.eq("first_category".to_string()), name.eq("second_category".to_string())])
             .execute(&connection);
 
-        let response_body = get_product_categories_request.dispatch().body_string().unwrap();
+        let mut response = get_product_categories_request.dispatch();
+        let response_body = response.body_string().unwrap();
+        let response_status = response.status();
+
         let mut returned_product_categories: Vec<ProductCategory> = serde_json::from_str(&response_body).unwrap();
         returned_product_categories.sort_by(|a: &ProductCategory, b: &ProductCategory| -> Ordering {
             a.name.cmp(&b.name)
@@ -225,7 +251,7 @@ mod tests {
         assert_eq!(2, returned_product_categories.len());
         assert_eq!("first_category".to_string(), returned_product_categories.get(0).unwrap().name);
         assert_eq!("second_category".to_string(), returned_product_categories.get(1).unwrap().name);
-
+        assert_eq!(Status::Ok, response_status);
     }
 
     #[test]
@@ -242,16 +268,36 @@ mod tests {
             .get_results(&connection)
             .unwrap();
 
+
         let get_request = client.get(format!("/productcategory/{}", inserted_product_categories.get(0).unwrap().0));
-        let response_body = get_request.dispatch().body_string().unwrap();
+        let mut response = get_request.dispatch();
+        let response_body = response.body_string().unwrap();
+        let response_status = response.status();
         let returned_product_category: ProductCategory = serde_json::from_str(&response_body).unwrap();
 
         let expected_product_category = ProductCategory {
             id: inserted_product_categories.get(0).unwrap().0,
             name: inserted_product_categories.get(0).unwrap().1.clone()
         };
-        assert_eq!(returned_product_category, expected_product_category)
+        assert_eq!(returned_product_category, expected_product_category);
+        assert_eq!(Status::Ok, response_status);
     }
+
+    #[test]
+    fn when_getting_missing_product_category_status_is_404() {
+        let docker_cli = Cli::default();
+        let database_metadata = start_database(&docker_cli);
+        let (rocket, connection) = start_rocket_with_db(&database_metadata);
+        let client = Client::new(rocket).expect("valid rocket instance");
+
+        let get_request = client.get(format!("/productcategory/{}", 999));
+        let mut response = get_request.dispatch();
+        let response_status = response.status();
+
+        assert_eq!(Status::NotFound, response_status);
+    }
+
+
 
     pub fn free_local_port() -> Option<u16> {
         let socket = std::net::SocketAddrV4::new(std::net::Ipv4Addr::LOCALHOST, 0);

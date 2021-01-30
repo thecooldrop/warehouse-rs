@@ -1,0 +1,2 @@
+[global.databases]
+pgdatabase = {url = "postgresql://testuser:Abc456+-@localhost:5432/testdb"}
