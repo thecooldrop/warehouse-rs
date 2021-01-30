@@ -10,6 +10,7 @@ extern crate rocket_contrib;
 extern crate diesel_migrations;
 
 mod entities;
+mod test_utils;
 pub mod schema;
 pub mod controllers;
 
