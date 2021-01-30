@@ -17,7 +17,7 @@ impl<'r, T : Serialize> Responder<'r> for GetResponder<T> {
                 respond_with_status_header(request, json_body, ContentType::JSON, Status::Ok)
             },
             Self::NotFound(empty) => {
-                respond_with_status_header(request, empty, ContentType::JSON, Status::Ok)
+                respond_with_status_header(request, empty, ContentType::JSON, Status::NotFound)
             }
         }
     }
