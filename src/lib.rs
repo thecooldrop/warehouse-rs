@@ -9,7 +9,7 @@ extern crate rocket_contrib;
 #[macro_use]
 extern crate diesel_migrations;
 
-pub mod controllers;
+pub mod utilities;
 mod entities;
 pub mod product_category;
 pub mod schema;

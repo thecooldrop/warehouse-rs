@@ -1,5 +1,5 @@
 use super::entities::ProductCategory;
-use crate::controllers::{GetResponder, PostResponder};
+use crate::utilities::{GetResponder, PostResponder};
 use crate::DbConn;
 use diesel::{insert_into, ExpressionMethods, QueryDsl, RunQueryDsl};
 use rocket::http::Status;
@@ -327,8 +327,6 @@ mod tests {
 
     #[test]
     fn put_creates_new_product_category() -> Result<(), diesel_migrations::RunMigrationsError> {
-        use crate::schema::product_category::dsl;
-
         let docker_cli = Cli::default();
         let database_metadata = crate::test_utils::start_database(&docker_cli);
         let (rocket, connection) = crate::test_utils::start_rocket_with_db(&database_metadata)?;
@@ -342,7 +340,6 @@ mod tests {
         put_request.set_body(serde_json::to_string(&put_category).unwrap());
 
         let mut put_response = put_request.dispatch();
-        let put_status = put_response.status();
         let response_body = put_response.body_string().unwrap();
 
         let expected_product_category = ProductCategory {
