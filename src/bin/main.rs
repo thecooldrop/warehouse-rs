@@ -8,7 +8,7 @@ use rocket::http::Status;
 use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
-use warehouse_rs::product_category::controllers;
+use warehouse_rs::product_category;
 use warehouse_rs::DbConn;
 
 fn main() {

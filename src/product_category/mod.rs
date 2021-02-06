@@ -1,2 +1,4 @@
 pub mod controllers;
-pub(in crate) mod entities;
+pub mod entities;
+
+pub use controllers::*;

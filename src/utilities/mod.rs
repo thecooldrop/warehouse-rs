@@ -7,7 +7,7 @@ use rocket::{
 use rocket_contrib::json::Json;
 use serde::Serialize;
 
-pub(in crate) enum GetResponder<T> {
+pub enum GetResponder<T> {
     Found(Json<T>),
     NotFound(()),
 }
