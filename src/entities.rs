@@ -13,10 +13,12 @@ pub struct Product {
     description: String,
 }
 
-
 #[derive(Queryable, Identifiable, Associations)]
 #[belongs_to(Product, foreign_key = "product_id")]
-#[belongs_to(crate::controllers::product_category::entities::ProductCategory, foreign_key = "product_category_id")]
+#[belongs_to(
+    crate::product_category::entities::ProductCategory,
+    foreign_key = "product_category_id"
+)]
 #[table_name = "product_category_classification"]
 /// Classification of products into categories
 ///
@@ -27,7 +29,6 @@ pub struct ProductCategoryClassification {
     product_category_id: i32,
     is_primary_classification: bool,
 }
-
 
 #[derive(Queryable, Identifiable, Associations)]
 #[table_name = "product_category_rollup"]

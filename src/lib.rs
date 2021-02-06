@@ -9,10 +9,11 @@ extern crate rocket_contrib;
 #[macro_use]
 extern crate diesel_migrations;
 
-mod entities;
-mod test_utils;
-pub mod schema;
 pub mod controllers;
+mod entities;
+pub mod product_category;
+pub mod schema;
+mod test_utils;
 
 #[database("pgdatabase")]
 pub struct DbConn(diesel::PgConnection);

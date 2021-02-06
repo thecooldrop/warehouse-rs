@@ -1,9 +1,8 @@
-use testcontainers::{Container, clients::Cli, images::postgres::Postgres, Docker, core::Port};
-use rocket::{Rocket, Config, config::Environment};
-use diesel::PgConnection;
-use std::collections::HashMap;
-use crate::controllers::product_category;
 use crate::DbConn;
+use diesel::PgConnection;
+use rocket::{config::Environment, Config, Rocket};
+use std::collections::HashMap;
+use testcontainers::{clients::Cli, core::Port, images::postgres::Postgres, Container, Docker};
 
 pub struct DatabaseMetadata<'a> {
     pub database_name: String,
@@ -11,7 +10,7 @@ pub struct DatabaseMetadata<'a> {
     pub password: String,
     pub port: u32,
     pub url: String,
-    pub db_container: Container<'a, Cli, Postgres>
+    pub db_container: Container<'a, Cli, Postgres>,
 }
 
 pub fn start_database(docker: &Cli) -> DatabaseMetadata {
@@ -25,12 +24,15 @@ pub fn start_database(docker: &Cli) -> DatabaseMetadata {
     let local_port = free_local_port().unwrap();
     let port_mapping = Port {
         local: local_port,
-        internal: 5432
+        internal: 5432,
     };
     let postgres_image = Postgres::default()
         .with_env_vars(environment_variables)
         .with_mapped_port(port_mapping);
-    let connection_str = format!("postgres://testuser:testpassword@localhost:{}/{}", local_port, db);
+    let connection_str = format!(
+        "postgres://testuser:testpassword@localhost:{}/{}",
+        local_port, db
+    );
     let container = docker.run(postgres_image);
     DatabaseMetadata {
         database_name: db,
@@ -38,12 +40,16 @@ pub fn start_database(docker: &Cli) -> DatabaseMetadata {
         password,
         port: local_port as u32,
         url: connection_str,
-        db_container: container
+        db_container: container,
     }
 }
 
-pub fn start_rocket_with_db(database_metadata: &DatabaseMetadata) -> Result<(Rocket, PgConnection),diesel_migrations::RunMigrationsError> {
-    let connection: PgConnection = diesel::connection::Connection::establish(&database_metadata.url).unwrap();
+pub fn start_rocket_with_db(
+    database_metadata: &DatabaseMetadata,
+) -> Result<(Rocket, PgConnection), diesel_migrations::RunMigrationsError> {
+    use super::product_category;
+    let connection: PgConnection =
+        diesel::connection::Connection::establish(&database_metadata.url).unwrap();
     embed_migrations!("./migrations");
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout())?;
 
@@ -60,7 +66,16 @@ pub fn start_rocket_with_db(database_metadata: &DatabaseMetadata) -> Result<(Roc
 
     let rocket = rocket::custom(rocket_config)
         .attach(DbConn::fairing())
-        .mount("/productcategory", routes![product_category::get, product_category::get_all, product_category::post, product_category::delete, product_category::put]);
+        .mount(
+            "/productcategory",
+            routes![
+                product_category::controllers::get,
+                product_category::controllers::get_all,
+                product_category::controllers::post,
+                product_category::controllers::delete,
+                product_category::controllers::put
+            ],
+        );
     Ok((rocket, connection))
 }
 

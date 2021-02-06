@@ -1,21 +1,25 @@
+use rocket::{
+    http::{ContentType, Status},
+    response,
+    response::Responder,
+    Request,
+};
 use rocket_contrib::json::Json;
-use rocket::{Request, response, response::Responder, http::{ContentType, Status}};
 use serde::Serialize;
 
-pub mod product_category;
 pub mod product;
 
 pub enum GetResponder<T> {
     Found(Json<T>),
-    NotFound(())
+    NotFound(()),
 }
 
-impl<'r, T : Serialize> Responder<'r> for GetResponder<T> {
+impl<'r, T: Serialize> Responder<'r> for GetResponder<T> {
     fn respond_to(self, request: &Request) -> response::Result<'r> {
         match self {
             Self::Found(json_body) => {
                 respond_with_status_header(request, json_body, ContentType::JSON, Status::Ok)
-            },
+            }
             Self::NotFound(empty) => {
                 respond_with_status_header(request, empty, ContentType::JSON, Status::NotFound)
             }
@@ -25,15 +29,15 @@ impl<'r, T : Serialize> Responder<'r> for GetResponder<T> {
 
 pub enum PostResponder<T> {
     Created(Json<T>),
-    Existed(Json<T>)
+    Existed(Json<T>),
 }
 
 impl<'r, T: Serialize> Responder<'r> for PostResponder<T> {
-    fn respond_to(self, request: &Request) -> response::Result<'r>{
+    fn respond_to(self, request: &Request) -> response::Result<'r> {
         match self {
             Self::Created(json_body) => {
                 respond_with_status_header(request, json_body, ContentType::JSON, Status::Created)
-            },
+            }
             Self::Existed(json_body) => {
                 respond_with_status_header(request, json_body, ContentType::JSON, Status::Ok)
             }
@@ -41,8 +45,12 @@ impl<'r, T: Serialize> Responder<'r> for PostResponder<T> {
     }
 }
 
-
-fn respond_with_status_header<'r, T: Responder<'r>>(request: &Request, responder: T, content_type: ContentType, status: Status) -> response::Result<'r> {
+fn respond_with_status_header<'r, T: Responder<'r>>(
+    request: &Request,
+    responder: T,
+    content_type: ContentType,
+    status: Status,
+) -> response::Result<'r> {
     let mut intermediate_response = responder.respond_to(request)?;
     intermediate_response.set_header(content_type);
     intermediate_response.set_status(status);
