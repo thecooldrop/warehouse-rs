@@ -1,5 +1,4 @@
 use super::schema::*;
-use serde::{Serialize, Deserialize};
 
 #[derive(Queryable, Identifiable)]
 #[table_name = "product"]
@@ -17,7 +16,7 @@ pub struct Product {
 
 #[derive(Queryable, Identifiable, Associations)]
 #[belongs_to(Product, foreign_key = "product_id")]
-#[belongs_to(ProductCategory, foreign_key = "product_category_id")]
+#[belongs_to(crate::controllers::product_category::entities::ProductCategory, foreign_key = "product_category_id")]
 #[table_name = "product_category_classification"]
 /// Classification of products into categories
 ///
@@ -27,17 +26,6 @@ pub struct ProductCategoryClassification {
     product_id: i32,
     product_category_id: i32,
     is_primary_classification: bool,
-}
-
-#[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Eq, Debug)]
-#[table_name = "product_category"]
-/// Product category
-///
-/// Represents possible grouping of products. Examples of products would be "Books", "Clothes"
-/// or "Office supplies"
-pub struct ProductCategory {
-    pub id: i32,
-    pub name: String,
 }
 
 

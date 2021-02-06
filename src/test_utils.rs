@@ -42,10 +42,10 @@ pub fn start_database(docker: &Cli) -> DatabaseMetadata {
     }
 }
 
-pub fn start_rocket_with_db(database_metadata: &DatabaseMetadata) -> (Rocket, PgConnection) {
+pub fn start_rocket_with_db(database_metadata: &DatabaseMetadata) -> Result<(Rocket, PgConnection),diesel_migrations::RunMigrationsError> {
     let connection: PgConnection = diesel::connection::Connection::establish(&database_metadata.url).unwrap();
     embed_migrations!("./migrations");
-    embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
+    embedded_migrations::run_with_output(&connection, &mut std::io::stdout())?;
 
     let mut database_config = HashMap::new();
     let mut pg_database_config = HashMap::new();
@@ -60,8 +60,8 @@ pub fn start_rocket_with_db(database_metadata: &DatabaseMetadata) -> (Rocket, Pg
 
     let rocket = rocket::custom(rocket_config)
         .attach(DbConn::fairing())
-        .mount("/productcategory", routes![product_category::get, product_category::get_all, product_category::post]);
-    (rocket, connection)
+        .mount("/productcategory", routes![product_category::get, product_category::get_all, product_category::post, product_category::delete, product_category::put]);
+    Ok((rocket, connection))
 }
 
 fn free_local_port() -> Option<u16> {
