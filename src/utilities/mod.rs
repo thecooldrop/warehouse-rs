@@ -57,12 +57,12 @@ fn respond_with_status_header<'r, T: Responder<'r>>(
 
 #[cfg(test)]
 mod tests {
-    use rocket::{Rocket, Request};
-    use rocket::local::{Client, LocalRequest};
     use crate::utilities::{GetResponder, PostResponder};
-    use rocket_contrib::json::Json;
+    use rocket::http::{ContentType, Status};
+    use rocket::local::{Client, LocalRequest};
     use rocket::response::Responder;
-    use rocket::http::{Status, ContentType};
+    use rocket::{Request, Rocket};
+    use rocket_contrib::json::Json;
 
     #[test]
     fn get_responder_returns_ok_if_variant_is_found() {
@@ -88,7 +88,10 @@ mod tests {
 
         match get_responder_under_test.respond_to(request) {
             Ok(response) => assert_eq!(Some(ContentType::JSON), response.content_type()),
-            Err(status) => panic!(format!("Failed because content type is not JSON with status {}", status)),
+            Err(status) => panic!(format!(
+                "Failed because content type is not JSON with status {}",
+                status
+            )),
         }
     }
 
@@ -102,7 +105,10 @@ mod tests {
 
         match get_responder_under_test.respond_to(request) {
             Ok(response) => assert_eq!(Status::NotFound, response.status()),
-            Err(status) => panic!(format!("Failed because status code of responder is not 404 with status : {}", status)),
+            Err(status) => panic!(format!(
+                "Failed because status code of responder is not 404 with status : {}",
+                status
+            )),
         }
     }
 
@@ -116,10 +122,12 @@ mod tests {
 
         match get_responder_under_test.respond_to(request) {
             Ok(response) => assert_eq!(Some(ContentType::JSON), response.content_type()),
-            Err(status) => panic!(format!("Failed with status {} because responder does not set content type to JSON", status)),
+            Err(status) => panic!(format!(
+                "Failed with status {} because responder does not set content type to JSON",
+                status
+            )),
         }
     }
-
 
     #[test]
     fn post_responder_returns_ok_if_variant_is_existed() {
@@ -131,7 +139,9 @@ mod tests {
 
         match post_responder_under_test.respond_to(request) {
             Ok(response) => assert_eq!(Status::Ok, response.status()),
-            Err(status) => panic!(format!("Test failed because PostResponder::Created does not have Status::Ok")),
+            Err(status) => panic!(format!(
+                "Test failed because PostResponder::Created does not have Status::Ok"
+            )),
         }
     }
 
@@ -145,10 +155,11 @@ mod tests {
 
         match post_responder_under_test.respond_to(request) {
             Ok(response) => assert_eq!(Some(ContentType::JSON), response.content_type()),
-            Err(status) => panic!(format!("Test failed because PostResponder::Created does not have ContentType::Json")),
+            Err(status) => panic!(format!(
+                "Test failed because PostResponder::Created does not have ContentType::Json"
+            )),
         }
     }
-
 
     #[test]
     fn post_responder_returns_created_if_variant_is_created() {
@@ -160,7 +171,9 @@ mod tests {
 
         match post_responder_under_test.respond_to(request) {
             Ok(response) => assert_eq!(Status::Created, response.status()),
-            Err(status) => panic!(format!("Test failed because PostResponder::Created does not have Status::Ok")),
+            Err(status) => panic!(format!(
+                "Test failed because PostResponder::Created does not have Status::Ok"
+            )),
         }
     }
 
@@ -174,8 +187,9 @@ mod tests {
 
         match post_responder_under_test.respond_to(request) {
             Ok(response) => assert_eq!(Some(ContentType::JSON), response.content_type()),
-            Err(status) => panic!(format!("Test failed because PostResponder::Created does not have ContentType::Json")),
+            Err(status) => panic!(format!(
+                "Test failed because PostResponder::Created does not have ContentType::Json"
+            )),
         }
     }
-
 }

@@ -1,5 +1,8 @@
 use super::entities::ProductCategory;
-use crate::{DbConn, utilities::{GetResponder, PostResponder}};
+use crate::{
+    utilities::{GetResponder, PostResponder},
+    DbConn,
+};
 use diesel::{insert_into, ExpressionMethods, QueryDsl, RunQueryDsl};
 use rocket::http::Status;
 use rocket_contrib::json::Json;
@@ -9,7 +12,6 @@ use serde::{Deserialize, Serialize};
 pub struct ProductCategoryRequestBody {
     pub name: String,
 }
-
 
 #[get("/")]
 pub fn get_all(db_conn: DbConn) -> Result<Json<Vec<ProductCategory>>, diesel::result::Error> {

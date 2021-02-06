@@ -69,11 +69,11 @@ pub fn start_rocket_with_db(
         .mount(
             "/productcategory",
             routes![
-                product_category::controllers::get,
-                product_category::controllers::get_all,
-                product_category::controllers::post,
-                product_category::controllers::delete,
-                product_category::controllers::put
+                product_category::get,
+                product_category::get_all,
+                product_category::post,
+                product_category::delete,
+                product_category::put
             ],
         );
     Ok((rocket, connection))
